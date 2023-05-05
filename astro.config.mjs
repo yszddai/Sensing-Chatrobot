@@ -36,7 +36,7 @@ export default defineConfig({
         registerType: 'autoUpdate',
         manifest: {
           name: 'Sensing ChatRobot',
-          short_name: 'ChatRobot,
+          short_name: 'ChatRobot',
           description: 'Sensing ChatRobot',
           theme_color: '#212129',
           background_color: '#ffffff',
