@@ -46,9 +46,9 @@ export default (props: Props) => {
         <div>
           <div class="fi gap-1 op-50 dark:op-60">
             <IconEnv />
-            <span>System Role:</span>
+            <span>系统角色:</span>
           </div>
-          <p class="my-2 leading-normal text-sm op-50 dark:op-60">Gently instruct the assistant and set the behavior of the assistant.</p>
+          <p class="my-2 leading-normal text-sm op-50 dark:op-60">指示系统角色，设定角色的特点和行为。</p>
           <div>
             <textarea
               ref={systemInputRef!}
@@ -60,7 +60,7 @@ export default (props: Props) => {
             />
           </div>
           <button onClick={handleButtonClick} gen-slate-btn>
-            Set
+            设置
           </button>
         </div>
       </Show>
