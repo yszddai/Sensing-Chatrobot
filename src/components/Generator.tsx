@@ -20,11 +20,14 @@ export default () => {
   const [isStick, setStick] = createSignal(false)
   const [recording, setRecording] = createSignal(false);
   const [audioChunks, setAudioChunks] = createSignal([]);
-
+  const [transcription, setTranscription] = createSignal('');
 
 
 
   onMount(() => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('Your browser does not support audio recording.');
+    }
 
     let lastPostion = window.scrollY
 
@@ -59,30 +62,34 @@ export default () => {
     isStick() ? localStorage.setItem('stickToBottom', 'stick') : localStorage.removeItem('stickToBottom')
   }
 
+
   const toggleRecording = () => {
     if (recording()) {
-      const mediaRecorder = new MediaRecorder(mediaStream());
+      const mediaRecorder = new MediaRecorder(new Blob(audioChunks()));
       mediaRecorder.addEventListener('dataavailable', event => {
         const formData = new FormData();
-        formData.append('audio', event.data, 'recording.mp3');
+        formData.append('audio', event.data);
 
-        fetch('http://127.0.0.1:5000/recog', {
+        fetch('http://192.168.10.41:5000/recog', {
           method: 'POST',
           body: formData
-        });
+        })
+         .then(response => response.json())
+            .then(data => {
+              setTranscription(data.transcription);
+              inputRef.value = transcription()
+            });
       });
 
       mediaRecorder.addEventListener('stop', () => {
-      setAudioChunks([]);
-      setRecording(false);
+        setAudioChunks([]);
+        setRecording(false);
       });
 
       mediaRecorder.stop();
     } else {
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then(stream => {
-          setMediaStream(stream);
-
           const mediaRecorder = new MediaRecorder(stream);
           mediaRecorder.start();
 
@@ -94,8 +101,6 @@ export default () => {
         });
     }
   };
-
-  const [mediaStream, setMediaStream] = createSignal(null);
 
   onMount(() => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
