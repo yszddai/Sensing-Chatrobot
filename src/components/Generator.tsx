@@ -63,14 +63,14 @@ export default () => {
     if (recording()) {
       const mediaRecorder = new MediaRecorder(mediaStream());
       mediaRecorder.addEventListener('dataavailable', event => {
-      //   const formData = new FormData();
-      //   formData.append('audio', event.data, 'recording.mp3');
-      //
-      //   fetch('http://127.0.0.1:5000/recog', {
-      //     method: 'POST',
-      //     body: formData
-      //   });
-      // });
+        // const formData = new FormData();
+        // formData.append('audio', event.data, 'recording.mp3');
+        //
+        // fetch('http://127.0.0.1:5000/recog', {
+        //   method: 'POST',
+        //   body: formData
+        // });
+      });
 
       mediaRecorder.addEventListener('stop', () => {
         setAudioChunks([]);
