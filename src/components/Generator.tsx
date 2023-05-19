@@ -80,21 +80,6 @@ export default () => {
       setTranscription('正在识别...');
       inputRef.value = transcription
 
-      // 将录音数据发送到 Docker 语音别服务进行识别
-      const formData = new FormData();
-      formData.append('', audio.blob, 'audio.wav');
-
-      // const response = await fetch('http://<127.0.0.1:5000/whisper', {
-      //   method: 'POST',
-      //   body: formData,
-      // });
-      //
-      // // 解析识别结果
-      // const data = await response.json();
-      // const { text } = data;
-
-      // 更新 UI
-      inputRef.value = "你好啊"
     } else {
       // 开始录音
       await recorder.start();
