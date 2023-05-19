@@ -20,6 +20,9 @@ export default () => {
   const [isStick, setStick] = createSignal(false)
   const [recording, setRecording] = createSignal(false);
   const [audioChunks, setAudioChunks] = createSignal([]);
+  const [mediaRecorder, setMediaRecorder] = createSignal(null);
+  const [mediaStream, setMediaStream] = createSignal(null);
+
 
 
 
@@ -61,47 +64,42 @@ export default () => {
 
   const toggleRecording = () => {
     if (recording()) {
-      const mediaRecorder = new MediaRecorder(mediaStream());
-      mediaRecorder.addEventListener('dataavailable', event => {
-        // const formData = new FormData();
-        // formData.append('audio', event.data, 'recording.mp3');
-        //
-        // fetch('http://127.0.0.1:5000/recog', {
-        //   method: 'POST',
-        //   body: formData
-        // });
-      });
-
-      mediaRecorder.addEventListener('stop', () => {
+      if (mediaRecorder()) {
+        mediaRecorder().stop();
+        setMediaRecorder(null);
         setAudioChunks([]);
         setRecording(false);
-      });
-
-      mediaRecorder.stop();
+      }
     } else {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Your browser does not support audio recording.');
+        return;
+      }
+
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then(stream => {
           setMediaStream(stream);
 
-          const mediaRecorder = new MediaRecorder(stream);
-          mediaRecorder.start();
+          const recorder = new MediaRecorder(stream);
+          setMediaRecorder(recorder);
 
-          mediaRecorder.addEventListener('dataavailable', event => {
-            setAudioChunks([...audioChunks(), event.data]);
+          recorder.addEventListener('dataavailable', event => {
+            setAudioChunks(prevChunks => [...prevChunks, event.data]);
           });
+
+          recorder.addEventListener('stop', () => {
+            setMediaRecorder(null);
+            setMediaStream(null);
+            setAudioChunks([]);
+            setRecording(false);
+          });
+
+          recorder.start();
 
           setRecording(true);
         });
     }
   };
-
-  const [mediaStream, setMediaStream] = createSignal(null);
-
-  onMount(() => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert('Your browser does not support audio recording.');
-    }
-  });
 
 
   // const newrecorder = new windows.webkitSe()
