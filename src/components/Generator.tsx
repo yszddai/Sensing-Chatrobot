@@ -329,7 +329,7 @@ export default () => {
             rows="1"
             class="gen-textarea"
           />
-          <button onClick={toggleRecording} disabled={!mediaStream()} gen-slate-btn>
+          <button onClick={toggleRecording} disabled={systemRoleEditing()} gen-slate-btn>
             {recording() ? 'Stop' : 'Start'}
           </button>
           <button onClick={handleButtonClick} disabled={systemRoleEditing()} gen-slate-btn>
