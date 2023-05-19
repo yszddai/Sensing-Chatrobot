@@ -61,21 +61,21 @@ export default () => {
 
   const toggleRecording = () => {
     if (recording()) {
-      const mediaRecorder = new MediaRecorder(mediaStream());
-      mediaRecorder.addEventListener('dataavailable', event => {
-        const formData = new FormData();
-        formData.append('audio', event.data, 'recording.mp3');
-
-        fetch('/save-audio', {
-          method: 'POST',
-          body: formData
-        });
-      });
-
-      mediaRecorder.addEventListener('stop', () => {
-        setAudioChunks([]);
-        setRecording(false);
-      });
+      // const mediaRecorder = new MediaRecorder(mediaStream());
+      // mediaRecorder.addEventListener('dataavailable', event => {
+      //   const formData = new FormData();
+      //   formData.append('audio', event.data, 'recording.mp3');
+      //
+      //   fetch('http://127.0.0.1:5000/recog', {
+      //     method: 'POST',
+      //     body: formData
+      //   });
+      // });
+      //
+      // mediaRecorder.addEventListener('stop', () => {
+      //   setAudioChunks([]);
+      //   setRecording(false);
+      // });
 
       mediaRecorder.stop();
     } else {
@@ -102,6 +102,7 @@ export default () => {
       alert('Your browser does not support audio recording.');
     }
   });
+
 
   // const newrecorder = new windows.webkitSe()
   //
