@@ -6,6 +6,9 @@ import MessageItem from './MessageItem'
 import SystemRoleSettings from './SystemRoleSettings'
 import ErrorMessageItem from './ErrorMessageItem'
 import type { ChatMessage, ErrorMessage } from '@/types'
+import Recorder from "recorder-js"
+
+
 
 export default () => {
   let inputRef: HTMLTextAreaElement
@@ -17,8 +20,11 @@ export default () => {
   const [loading, setLoading] = createSignal(false)
   const [controller, setController] = createSignal<AbortController>(null)
   const [isStick, setStick] = createSignal(false)
+  const [audioData, setAudioData] = createSignal(null);
+  const [transcription, setTranscription] = createSignal('');
 
-  createEffect(() => (isStick() && smoothToBottom()))
+
+
 
   onMount(() => {
     let lastPostion = window.scrollY
@@ -54,6 +60,53 @@ export default () => {
     isStick() ? localStorage.setItem('stickToBottom', 'stick') : localStorage.removeItem('stickToBottom')
   }
 
+
+  const recorder = new Recorder({
+    sampleRate: 16000,
+    numChannels: 1,
+  });
+
+  // 创建一个状态来存储录音状态
+  const [isRecording, setIsRecording] = createSignal(false);
+
+  // 处理录音按钮点击事件
+  const handleRecordButtonClick = async () => {
+    if (isRecording()) {
+      // 停止录音
+      const audio = await recorder.stop();
+
+      // 更新 UI
+      setAudioData(audio);
+      setTranscription('正在识别...');
+
+      // 将录音数据发送到 Docker 语音别服务进行识别
+      const formData = new FormData();
+      formData.append('', audio.blob, 'audio.wav');
+
+      const response = await fetch('http://<127.0.0.1:5000/whisper', {
+        method: 'POST',
+        body: formData,
+      });
+
+      // 解析识别结果
+      const data = await response.json();
+      const { text } = data;
+
+      // 更新 UI
+      inputRef.value = text
+    } else {
+      // 开始录音
+      await recorder.start();
+
+      // 更新 UI
+      setAudioData(null);
+      setTranscription('正在录音...');
+    }
+
+    // 切换录音状态
+    setIsRecording(!isRecording());
+  };
+
   const handleButtonClick = async() => {
     const inputValue = inputRef.value
     if (!inputValue)
@@ -69,6 +122,10 @@ export default () => {
     ])
     requestWithLatestMessage()
     instantToBottom()
+  }
+
+  const RecordClick = async () => {
+    inputRef.value = "你好啊"
   }
 
   const smoothToBottom = useThrottleFn(() => {
@@ -227,7 +284,7 @@ export default () => {
         when={!loading()}
         fallback={() => (
           <div class="gen-cb-wrapper">
-            <span>AI is thinking...</span>
+            <span>The robot is thinking.....</span>
             <div class="gen-cb-stop" onClick={stopStreamFetch}>Stop</div>
           </div>
         )}
@@ -237,7 +294,7 @@ export default () => {
             ref={inputRef!}
             disabled={systemRoleEditing()}
             onKeyDown={handleKeydown}
-            placeholder="Enter something..."
+            placeholder="Input something..."
             autocomplete="off"
             autofocus
             onInput={() => {
@@ -247,6 +304,10 @@ export default () => {
             rows="1"
             class="gen-textarea"
           />
+          <button onClick={handleRecordButtonClick} disabled={systemRoleEditing()} gen-slate-btn>
+          {isRecording() ? 'stop' : 'record'}
+          </button>
+          <div>{transcription()}</div>
           <button onClick={handleButtonClick} disabled={systemRoleEditing()} gen-slate-btn>
             Send
           </button>
