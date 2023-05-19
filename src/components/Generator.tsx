@@ -61,10 +61,10 @@ export default () => {
 
   const toggleRecording = () => {
     if (recording()) {
-      const mediaRecorder = new MediaRecorder(new Blob(audioChunks()));
+      const mediaRecorder = new MediaRecorder(mediaStream());
       mediaRecorder.addEventListener('dataavailable', event => {
         const formData = new FormData();
-        formData.append('audio', event.data, 'audio.mp3');
+        formData.append('audio', event.data, 'recording.mp3');
 
         fetch('/save-audio', {
           method: 'POST',
@@ -81,6 +81,8 @@ export default () => {
     } else {
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then(stream => {
+          setMediaStream(stream);
+
           const mediaRecorder = new MediaRecorder(stream);
           mediaRecorder.start();
 
