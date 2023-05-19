@@ -83,17 +83,17 @@ export default () => {
       const formData = new FormData();
       formData.append('', audio.blob, 'audio.wav');
 
-      const response = await fetch('http://<127.0.0.1:5000/whisper', {
-        method: 'POST',
-        body: formData,
-      });
-
-      // 解析识别结果
-      const data = await response.json();
-      const { text } = data;
+      // const response = await fetch('http://<127.0.0.1:5000/whisper', {
+      //   method: 'POST',
+      //   body: formData,
+      // });
+      //
+      // // 解析识别结果
+      // const data = await response.json();
+      // const { text } = data;
 
       // 更新 UI
-      inputRef.value = text
+      inputRef.value = "你好啊"
     } else {
       // 开始录音
       await recorder.start();
