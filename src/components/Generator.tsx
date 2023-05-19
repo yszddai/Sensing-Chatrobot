@@ -336,7 +336,7 @@ export default () => {
             class="gen-textarea"
           />
           <button onClick={toggleRecording} disabled={systemRoleEditing()} gen-slate-btn>
-            {recording() ? 'Stop' : 'Start'}
+            {recording() ? 'Stop' : 'record'}
           </button>
           <button onClick={handleButtonClick} disabled={systemRoleEditing()} gen-slate-btn>
             Send
