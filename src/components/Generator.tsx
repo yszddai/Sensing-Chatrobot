@@ -78,6 +78,7 @@ export default () => {
       // 更新 UI
       setAudioData(audio);
       setTranscription('正在识别...');
+      inputRef.value = transcription
 
       // 将录音数据发送到 Docker 语音别服务进行识别
       const formData = new FormData();
@@ -100,7 +101,8 @@ export default () => {
 
       // 更新 UI
       setAudioData(null);
-      setTranscription('正在录音...');
+      setTranscription('正在录音');
+      sinputRef.value = transcription
     }
 
     // 切换录音状态
