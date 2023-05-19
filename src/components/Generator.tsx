@@ -62,8 +62,8 @@ export default () => {
 
 
   const recorder = new Recorder({
-    sampleRate: 16000,
-    numChannels: 1,
+    sampleRate: 44100,
+    numChannels: 2,
   });
 
   // 创建一个状态来存储录音状态
@@ -77,8 +77,7 @@ export default () => {
 
       // 更新 UI
       setAudioData(audio);
-      setTranscription('正在识别...');
-      inputRef.value = transcription
+      inputRef.value = "正在识别.."
 
     } else {
       // 开始录音
@@ -86,8 +85,7 @@ export default () => {
 
       // 更新 UI
       setAudioData(null);
-      setTranscription('正在录音');
-      sinputRef.value = transcription
+      inputRef.value = "正在录音.."
     }
 
     // 切换录音状态
@@ -109,10 +107,6 @@ export default () => {
     ])
     requestWithLatestMessage()
     instantToBottom()
-  }
-
-  const RecordClick = async () => {
-    inputRef.value = "你好啊"
   }
 
   const smoothToBottom = useThrottleFn(() => {
