@@ -75,24 +75,25 @@ export default () => {
   };
 
   const stopRecording = () => {
-    const mediaRecorder = audioChunks().length > 0 ? new MediaRecorder(new Blob(audioChunks())) : null;
-    if (mediaRecorder) {
-      mediaRecorder.addEventListener('dataavailable', event => {
-        const formData = new FormData();
-        formData.append('audio', event.data, 'recording.mp3');
+  const mediaRecorder = new MediaRecorder(new Blob(audioChunks()));
+  mediaRecorder.addEventListener('dataavailable', event => {
+    const formData = new FormData();
+    formData.append('audio', event.data, 'recording.wav');
 
-        fetch('/save-audio', {
-          method: 'POST',
-          body: formData
-        });
-      });
+    fetch('/save-audio', {
+      method: 'POST',
+      body: formData
+    });
+  });
 
-      mediaRecorder.start();
-      setAudioChunks([]);
-    }
-
+  mediaRecorder.addEventListener('stop', () => {
+    setAudioChunks([]);
     setRecording(false);
-  };
+  });
+
+  mediaRecorder.stop();
+ };
+
 
   onMount(() => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
