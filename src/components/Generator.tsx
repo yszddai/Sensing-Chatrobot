@@ -61,7 +61,7 @@ export default () => {
 
   const toggleRecording = () => {
     if (recording()) {
-      // const mediaRecorder = new MediaRecorder(mediaStream());
+      const mediaRecorder = new MediaRecorder(mediaStream());
       // mediaRecorder.addEventListener('dataavailable', event => {
       //   const formData = new FormData();
       //   formData.append('audio', event.data, 'recording.mp3');
@@ -76,7 +76,7 @@ export default () => {
       //   setAudioChunks([]);
       //   setRecording(false);
       // });
-
+      setRecording(false);
       mediaRecorder.stop();
     } else {
       navigator.mediaDevices.getUserMedia({ audio: true })
