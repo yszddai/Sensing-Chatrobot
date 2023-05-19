@@ -20,8 +20,8 @@ export default () => {
   const [loading, setLoading] = createSignal(false)
   const [controller, setController] = createSignal<AbortController>(null)
   const [isStick, setStick] = createSignal(false)
-  const [audioData, setAudioData] = createSignal(null);
-  const [transcription, setTranscription] = createSignal('');
+  const [recording, setRecording] = createSignal(false);
+  const [audioChunks, setAudioChunks] = createSignal([]);
 
 
 
@@ -60,37 +60,77 @@ export default () => {
     isStick() ? localStorage.setItem('stickToBottom', 'stick') : localStorage.removeItem('stickToBottom')
   }
 
+  const startRecording = () => {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.start();
 
-  const recorder = new Recorder({
-    sampleRate: 44100,
-    numChannels: 2,
-  });
+        mediaRecorder.addEventListener('dataavailable', event => {
+          setAudioChunks([...audioChunks(), event.data]);
+        });
 
-  // 创建一个状态来存储录音状态
-  const [isRecording, setIsRecording] = createSignal(false);
+        setRecording(true);
+      });
+  };
 
-  // 处理录音按钮点击事件
-  const handleRecordButtonClick = async () => {
-    if (isRecording()) {
-      // 停止录音
-      const audio = await recorder.stop();
+  const stopRecording = () => {
+    const mediaRecorder = audioChunks().length > 0 ? new MediaRecorder(new Blob(audioChunks())) : null;
+    if (mediaRecorder) {
+      mediaRecorder.addEventListener('dataavailable', event => {
+        const formData = new FormData();
+        formData.append('audio', event.data, 'recording.mp3');
 
-      // 更新 UI
-      setAudioData(audio);
-      inputRef.value = "正在识别.."
+        fetch('/save-audio', {
+          method: 'POST',
+          body: formData
+        });
+      });
 
-    } else {
-      // 开始录音
-      await recorder.start();
-
-      // 更新 UI
-      setAudioData(null);
-      inputRef.value = "正在录音.."
+      mediaRecorder.start();
+      setAudioChunks([]);
     }
 
-    // 切换录音状态
-    setIsRecording(!isRecording());
+    setRecording(false);
   };
+
+  onMount(() => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('Your browser does not support audio recording.');
+    }
+  });
+  // const newrecorder = new windows.webkitSe()
+  //
+  // const recorder = new Recorder({
+  //   sampleRate: 44100,
+  //   numChannels: 2,
+  // });
+  //
+  // // 创建一个状态来存储录音状态
+  // const [isRecording, setIsRecording] = createSignal(false);
+  //
+  // // 处理录音按钮点击事件
+  // const handleRecordButtonClick = async () => {
+  //   if (isRecording()) {
+  //     // 停止录音
+  //     const audio = await recorder.stop();
+  //
+  //     // 更新 UI
+  //     setAudioData(audio);
+  //     inputRef.value = "正在识别.."
+  //
+  //   } else {
+  //     // 开始录音
+  //     await recorder.start();
+  //
+  //     // 更新 UI
+  //     setAudioData(null);
+  //     inputRef.value = "正在录音.."
+  //   }
+  //
+  //   // 切换录音状态
+  //   setIsRecording(!isRecording());
+  // };
 
   const handleButtonClick = async() => {
     const inputValue = inputRef.value
@@ -285,10 +325,8 @@ export default () => {
             rows="1"
             class="gen-textarea"
           />
-          <button onClick={handleRecordButtonClick} disabled={systemRoleEditing()} gen-slate-btn>
-          {isRecording() ? 'stop' : 'record'}
-          </button>
-          <div>{transcription()}</div>
+          <button onClick={startRecording} disabled={recording()}>Start Recording</button>
+          <button onClick={stopRecording} disabled={!recording()}>Stop Recording</button>
           <button onClick={handleButtonClick} disabled={systemRoleEditing()} gen-slate-btn>
             Send
           </button>
