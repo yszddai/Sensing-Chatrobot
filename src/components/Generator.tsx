@@ -6,8 +6,6 @@ import MessageItem from './MessageItem'
 import SystemRoleSettings from './SystemRoleSettings'
 import ErrorMessageItem from './ErrorMessageItem'
 import type { ChatMessage, ErrorMessage } from '@/types'
-import Recorder from "recorder-js"
-
 
 
 export default () => {
@@ -27,6 +25,7 @@ export default () => {
 
 
   onMount(() => {
+
     let lastPostion = window.scrollY
 
     window.addEventListener('scroll', () => {
@@ -62,10 +61,10 @@ export default () => {
 
   const toggleRecording = () => {
     if (recording()) {
-      const mediaRecorder = new MediaRecorder(mediaStream());
+      const mediaRecorder = new MediaRecorder(new Blob(audioChunks()));
       mediaRecorder.addEventListener('dataavailable', event => {
         const formData = new FormData();
-        formData.append('audio', event.data, 'recording.mp3');
+        formData.append('audio', event.data, 'audio.mp3');
 
         fetch('/save-audio', {
           method: 'POST',
@@ -93,6 +92,14 @@ export default () => {
         });
     }
   };
+
+  const [mediaStream, setMediaStream] = createSignal(null);
+
+  onMount(() => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('Your browser does not support audio recording.');
+    }
+  });
 
   // const newrecorder = new windows.webkitSe()
   //
@@ -320,8 +327,8 @@ export default () => {
             rows="1"
             class="gen-textarea"
           />
-          <button onClick={toggleRecording} disabled={recording()} gen-slate-btn>
-          {recording() ? 'Stop' : 'Record'}
+          <button onClick={toggleRecording} disabled={!mediaStream()} gen-slate-btn>
+            {recording() ? 'Stop' : 'Start'}
           </button>
           <button onClick={handleButtonClick} disabled={systemRoleEditing()} gen-slate-btn>
             Send
