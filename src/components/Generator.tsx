@@ -60,46 +60,40 @@ export default () => {
     isStick() ? localStorage.setItem('stickToBottom', 'stick') : localStorage.removeItem('stickToBottom')
   }
 
-  const startRecording = () => {
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.start();
+  const toggleRecording = () => {
+    if (recording()) {
+      const mediaRecorder = new MediaRecorder(new Blob(audioChunks()));
+      mediaRecorder.addEventListener('dataavailable', event => {
+        const formData = new FormData();
+        formData.append('audio', event.data, 'recording.mp3');
 
-        mediaRecorder.addEventListener('dataavailable', event => {
-          setAudioChunks([...audioChunks(), event.data]);
+        fetch('/save-audio', {
+          method: 'POST',
+          body: formData
         });
-
-        setRecording(true);
       });
+
+      mediaRecorder.addEventListener('stop', () => {
+        setAudioChunks([]);
+        setRecording(false);
+      });
+
+      mediaRecorder.stop();
+    } else {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          const mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.start();
+
+          mediaRecorder.addEventListener('dataavailable', event => {
+            setAudioChunks([...audioChunks(), event.data]);
+          });
+
+          setRecording(true);
+        });
+    }
   };
 
-  const stopRecording = () => {
-  const mediaRecorder = new MediaRecorder(new Blob(audioChunks()));
-  mediaRecorder.addEventListener('dataavailable', event => {
-    const formData = new FormData();
-    formData.append('audio', event.data, 'recording.wav');
-
-    fetch('/save-audio', {
-      method: 'POST',
-      body: formData
-    });
-  });
-
-  mediaRecorder.addEventListener('stop', () => {
-    setAudioChunks([]);
-    setRecording(false);
-  });
-
-  mediaRecorder.stop();
- };
-
-
-  onMount(() => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert('Your browser does not support audio recording.');
-    }
-  });
   // const newrecorder = new windows.webkitSe()
   //
   // const recorder = new Recorder({
@@ -326,8 +320,9 @@ export default () => {
             rows="1"
             class="gen-textarea"
           />
-          <button onClick={startRecording} disabled={recording()}>Start Recording</button>
-          <button onClick={stopRecording} disabled={!recording()}>Stop Recording</button>
+          <button onClick={toggleRecording} disabled={recording()} gen-slate-btn>
+          {recording() ? 'Stop' : 'Record'}
+          </button>
           <button onClick={handleButtonClick} disabled={systemRoleEditing()} gen-slate-btn>
             Send
           </button>
