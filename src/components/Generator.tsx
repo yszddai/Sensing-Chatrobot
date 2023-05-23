@@ -202,30 +202,30 @@ export default () => {
     }
   }
 
-  const handleFileUpload = (event) => {
-    setAudioFile(event.target.files[0]);
-
-  };
-
-  const handleUpload = async () => {
-    const formData = new FormData();
-    // formData['audio'] =  audioFile();
-    formData.append('audio', new Blob(audioFile()), 'audio.mp3')
-    console.log(formData);
-
-    try {
-      const response = await axios.post('http://192.168.10.41:5000/api/speech-to-text', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      console.log(response.data);
-      // Do something with the response data
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  // const handleFileUpload = (event) => {
+  //   setAudioFile(event.target.files[0]);
+  //
+  // };
+  //
+  // const handleUpload = async () => {
+  //   const formData = new FormData();
+  //   // formData['audio'] =  audioFile();
+  //   formData.append('audio', new Blob(audioFile()), 'audio.mp3')
+  //   console.log(formData);
+  //
+  //   try {
+  //     const response = await axios.post('http://192.168.10.41:5000/api/speech-to-text', formData, {
+  //       headers: {
+  //         'Content-Type': 'multipart/form-data',
+  //       },
+  //     });
+  //
+  //     console.log(response.data);
+  //     // Do something with the response data
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
 
 
   const toggleRecording = () => {
@@ -319,8 +319,8 @@ export default () => {
             rows="1"
             class="gen-textarea"
           />
-          <input type="file" accept="audio/*" onChange={handleFileUpload} gen-slate-btn/>
-          <button onClick={handleUpload} gen-slate-btn>Upload</button >
+          {/*<input type="file" accept="audio/*" onChange={handleFileUpload} gen-slate-btn/>*/}
+          {/*<button onClick={handleUpload} gen-slate-btn>Upload</button >*/}
           <button onClick={toggleRecording} disabled={!mediaStream()} gen-slate-btn>
           {recording() ? 'Stop Recording' : 'Start Recording'}
           </button>
