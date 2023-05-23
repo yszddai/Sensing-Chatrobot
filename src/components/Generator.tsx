@@ -6,6 +6,7 @@ import MessageItem from './MessageItem'
 import SystemRoleSettings from './SystemRoleSettings'
 import ErrorMessageItem from './ErrorMessageItem'
 import type { ChatMessage, ErrorMessage } from '@/types'
+import axios from 'axios';
 
 
 export default () => {
@@ -21,6 +22,7 @@ export default () => {
   const [recording, setRecording] = createSignal(false);
   const [audioChunks, setAudioChunks] = createSignal([]);
   const [transcription, setTranscription] = createSignal('');
+  const [audioFile, setAudioFile] = createSignal(null);
 
 
 
@@ -65,11 +67,11 @@ export default () => {
 
   const toggleRecording = () => {
     if (recording()) {
+      // @ts-ignore
       const mediaRecorder = new MediaRecorder(new Blob(audioChunks()));
       mediaRecorder.addEventListener('dataavailable', event => {
         const formData = new FormData();
         formData.append('audio', event.data);
-
         fetch('http://192.168.10.41:5000/recog', {
           method: 'POST',
           body: formData
@@ -80,6 +82,7 @@ export default () => {
               inputRef.value = transcription()
             });
       });
+
 
       mediaRecorder.addEventListener('stop', () => {
         setAudioChunks([]);
@@ -107,6 +110,32 @@ export default () => {
       alert('Your browser does not support audio recording.');
     }
   });
+
+
+  const handleFileUpload = (event) => {
+    setAudioFile(event.target.files[0]);
+  };
+
+  const handleUpload = async () => {
+    const formData = new FormData();
+    // @ts-ignore
+    formData.append('audio', audioFile);
+
+    try {
+      const response = await axios.post('http://192.168.10.41:5000/recog', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log(response.data);
+      inputRef.value = response.data
+
+      // Do something with the response data
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
 
   // const newrecorder = new windows.webkitSe()
@@ -164,6 +193,7 @@ export default () => {
   }, 300, false, true)
 
   const instantToBottom = () => {
+    // @ts-ignore
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' })
   }
 
@@ -336,8 +366,10 @@ export default () => {
             class="gen-textarea"
           />
           <button onClick={toggleRecording} disabled={systemRoleEditing()} gen-slate-btn>
-            {recording() ? 'Stop' : 'record'}
+            {recording() ? 'stop' : 'start'}
           </button>
+          <input type="file" accept="audio/*" onChange={handleFileUpload} />
+          <button onClick={handleUpload}>Upload</button>
           <button onClick={handleButtonClick} disabled={systemRoleEditing()} gen-slate-btn>
             Send
           </button>
