@@ -8,7 +8,6 @@ import ErrorMessageItem from './ErrorMessageItem'
 import type { ChatMessage, ErrorMessage } from '@/types'
 import axios from 'axios';
 
-
 export default () => {
   let inputRef: HTMLTextAreaElement
   const [currentSystemRoleSettings, setCurrentSystemRoleSettings] = createSignal('')
@@ -19,18 +18,13 @@ export default () => {
   const [loading, setLoading] = createSignal(false)
   const [controller, setController] = createSignal<AbortController>(null)
   const [isStick, setStick] = createSignal(false)
+  const [audioFile, setAudioFile] = createSignal(null);
   const [recording, setRecording] = createSignal(false);
   const [audioChunks, setAudioChunks] = createSignal([]);
-  const [transcription, setTranscription] = createSignal('');
-  const [audioFile, setAudioFile] = createSignal(null);
 
-
+  createEffect(() => (isStick() && smoothToBottom()))
 
   onMount(() => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert('Your browser does not support audio recording.');
-    }
-
     let lastPostion = window.scrollY
 
     window.addEventListener('scroll', () => {
@@ -63,113 +57,6 @@ export default () => {
     localStorage.setItem('systemRoleSettings', currentSystemRoleSettings())
     isStick() ? localStorage.setItem('stickToBottom', 'stick') : localStorage.removeItem('stickToBottom')
   }
-
-
-  const toggleRecording = () => {
-    if (recording()) {
-      // @ts-ignore
-      const mediaRecorder = new MediaRecorder(new Blob(audioChunks()));
-      mediaRecorder.addEventListener('dataavailable', event => {
-        const formData = new FormData();
-        formData.append('audio', event.data);
-        fetch('http://192.168.10.41:5000/recog', {
-          method: 'POST',
-          body: formData
-        })
-         .then(response => response.json())
-            .then(data => {
-              setTranscription(data.transcription);
-              inputRef.value = transcription()
-            });
-      });
-
-
-      mediaRecorder.addEventListener('stop', () => {
-        setAudioChunks([]);
-        setRecording(false);
-      });
-
-      mediaRecorder.stop();
-    } else {
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-          const mediaRecorder = new MediaRecorder(stream);
-          mediaRecorder.start();
-
-          mediaRecorder.addEventListener('dataavailable', event => {
-            setAudioChunks([...audioChunks(), event.data]);
-          });
-
-          setRecording(true);
-        });
-    }
-  };
-
-  onMount(() => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert('Your browser does not support audio recording.');
-    }
-  });
-
-
-  const handleFileUpload = (event) => {
-    setAudioFile(event.target.files[0]);
-  };
-
-  const handleUpload = async () => {
-    const formData = new FormData();
-    // @ts-ignore
-    formData.append('audio', audioFile);
-
-    try {
-      const response = await axios.post('http://192.168.10.41:5000/recog', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      console.log(response.data);
-      inputRef.value = response.data
-
-      // Do something with the response data
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-
-  // const newrecorder = new windows.webkitSe()
-  //
-  // const recorder = new Recorder({
-  //   sampleRate: 44100,
-  //   numChannels: 2,
-  // });
-  //
-  // // 创建一个状态来存储录音状态
-  // const [isRecording, setIsRecording] = createSignal(false);
-  //
-  // // 处理录音按钮点击事件
-  // const handleRecordButtonClick = async () => {
-  //   if (isRecording()) {
-  //     // 停止录音
-  //     const audio = await recorder.stop();
-  //
-  //     // 更新 UI
-  //     setAudioData(audio);
-  //     inputRef.value = "正在识别.."
-  //
-  //   } else {
-  //     // 开始录音
-  //     await recorder.start();
-  //
-  //     // 更新 UI
-  //     setAudioData(null);
-  //     inputRef.value = "正在录音.."
-  //   }
-  //
-  //   // 切换录音状态
-  //   setIsRecording(!isRecording());
-  // };
 
   const handleButtonClick = async() => {
     const inputValue = inputRef.value
@@ -315,6 +202,73 @@ export default () => {
     }
   }
 
+  const handleFileUpload = (event) => {
+    setAudioFile(event.target.files[0]);
+
+  };
+
+  const handleUpload = async () => {
+    const formData = new FormData();
+    // formData['audio'] =  audioFile();
+    formData.append('audio', new Blob(audioFile()), 'audio.mp3')
+    console.log(formData);
+
+    try {
+      const response = await axios.post('http://192.168.10.41:5000/api/speech-to-text', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log(response.data);
+      // Do something with the response data
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
+  const toggleRecording = () => {
+    if (recording()) {
+      const mediaRecorder = new MediaRecorder(mediaStream());
+      mediaRecorder.addEventListener('dataavailable', event => {
+        const formData = new FormData();
+        formData.append('audio', event.data, 'recording.mp3');
+
+        fetch('http://192.168.10.41:5000/api/speech-to-text', {
+          method: 'POST',
+          body: formData
+        });
+      });
+
+      mediaRecorder.addEventListener('stop', () => {
+        setAudioChunks([]);
+        setRecording(false);
+      });
+
+      mediaRecorder.stop();
+    } else {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          setMediaStream(stream);
+
+          const mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.start();
+
+          mediaRecorder.addEventListener('dataavailable', event => {
+            setAudioChunks([...audioChunks(), event.data]);
+          });
+
+          setRecording(true);
+        });
+    }
+  };
+
+  const [mediaStream, setMediaStream] = createSignal(null);
+
+
+
+  // @ts-ignore
   return (
     <div my-6>
       <SystemRoleSettings
@@ -345,7 +299,7 @@ export default () => {
         when={!loading()}
         fallback={() => (
           <div class="gen-cb-wrapper">
-            <span>The robot is thinking.....</span>
+            <span>AI is thinking...</span>
             <div class="gen-cb-stop" onClick={stopStreamFetch}>Stop</div>
           </div>
         )}
@@ -355,7 +309,7 @@ export default () => {
             ref={inputRef!}
             disabled={systemRoleEditing()}
             onKeyDown={handleKeydown}
-            placeholder="Input something..."
+            placeholder="Enter something..."
             autocomplete="off"
             autofocus
             onInput={() => {
@@ -365,11 +319,11 @@ export default () => {
             rows="1"
             class="gen-textarea"
           />
-          <button onClick={toggleRecording} disabled={systemRoleEditing()} gen-slate-btn>
-            {recording() ? 'stop' : 'start'}
+          <input type="file" accept="audio/*" onChange={handleFileUpload} gen-slate-btn/>
+          <button onClick={handleUpload} gen-slate-btn>Upload</button >
+          <button onClick={toggleRecording} disabled={!mediaStream()} gen-slate-btn>
+          {recording() ? 'Stop Recording' : 'Start Recording'}
           </button>
-          <input type="file" accept="audio/*" onChange={handleFileUpload} />
-          <button onClick={handleUpload}>Upload</button>
           <button onClick={handleButtonClick} disabled={systemRoleEditing()} gen-slate-btn>
             Send
           </button>
