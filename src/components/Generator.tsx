@@ -6,6 +6,8 @@ import MessageItem from './MessageItem'
 import SystemRoleSettings from './SystemRoleSettings'
 import ErrorMessageItem from './ErrorMessageItem'
 import type { ChatMessage, ErrorMessage } from '@/types'
+import { Icon } from '@iconify/react';
+import microphoneIcon from '@iconify-icons/mdi/microphone';
 
 export default () => {
   let inputRef: HTMLTextAreaElement
@@ -267,7 +269,7 @@ export default () => {
 
         // 发送formData到后端服务器
         // 代码示例：
-        const response = await fetch("https://192.168.10.41:5000/api/speech-to-text", {
+        const response = await fetch("http://192.168.10.41:5000/api/speech-to-text", {
           method: "POST",
           body: formData,
         });
@@ -340,9 +342,10 @@ export default () => {
           />
           {/*<input type="file" accept="audio/*" onChange={handleFileUpload} gen-slate-btn/>*/}
           {/*<button onClick={handleUpload} gen-slate-btn>Upload</button >*/}
-          <button onClick={toggleRecording}>
-            {isRecording() ? "Stop" : "Start"}
-          </button>
+          {/*<button onClick={toggleRecording}>*/}
+          {/*  {isRecording() ? "Stop" : "Start"}*/}
+          {/*</button>*/}
+          <Icon icon={microphoneIcon} onClick={toggleRecording} color={isRecording() ? 'red' : 'black'} />
           <button onClick={handleButtonClick} disabled={systemRoleEditing()} gen-slate-btn>
             Send
           </button>
