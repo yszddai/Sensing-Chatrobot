@@ -1,12 +1,11 @@
-import { Index, Show, createEffect, createSignal, onCleanup, onMount } from 'solid-js'
-import { useThrottleFn } from 'solidjs-use'
+import { Index, Show, createEffect, createSignal, onCleanup, onMount} from 'solid-js'
+import { useThrottleFn} from 'solidjs-use'
 import { generateSignature } from '@/utils/auth'
 import IconClear from './icons/Clear'
 import MessageItem from './MessageItem'
 import SystemRoleSettings from './SystemRoleSettings'
 import ErrorMessageItem from './ErrorMessageItem'
 import type { ChatMessage, ErrorMessage } from '@/types'
-import axios from 'axios';
 
 export default () => {
   let inputRef: HTMLTextAreaElement
@@ -18,9 +17,9 @@ export default () => {
   const [loading, setLoading] = createSignal(false)
   const [controller, setController] = createSignal<AbortController>(null)
   const [isStick, setStick] = createSignal(false)
-  const [audioFile, setAudioFile] = createSignal(null);
-  const [recording, setRecording] = createSignal(false);
-  const [audioChunks, setAudioChunks] = createSignal([]);
+  const [audioStream, setAudioStream] = createSignal<MediaStream | null>(null);
+  const [recorder, setRecorder] = createSignal<MediaRecorder | null>(null);
+  const [isRecording, setIsRecording] = createSignal(false);
 
   createEffect(() => (isStick() && smoothToBottom()))
 
@@ -203,14 +202,21 @@ export default () => {
   }
 
   // const handleFileUpload = (event) => {
-  //   setAudioFile(event.target.files[0]);
-  //
+  //   const file= event.target.files[0];
+  //   const reader = new FileReader();
+  //   reader.readAsArrayBuffer(file);
+  //   reader.onload = () => {
+  //     const blob = new Blob([reader.result], { type: 'audio/mpeg' }); // 将ArrayBuffer转换为Blob对象
+  //     // console.log(blob); // 输出Blob对象
+  //     setAudioFile(blob)
+  //   };
+  //   // setAudioFile(event.target.files[0])
   // };
   //
   // const handleUpload = async () => {
   //   const formData = new FormData();
   //   // formData['audio'] =  audioFile();
-  //   formData.append('audio', new Blob(audioFile()), 'audio.mp3')
+  //   formData.append('audio', audioFile(), 'myauo.mp3')
   //   console.log(formData);
   //
   //   try {
@@ -221,6 +227,7 @@ export default () => {
   //     });
   //
   //     console.log(response.data);
+  //     inputRef.value = response.data.text
   //     // Do something with the response data
   //   } catch (error) {
   //     console.error(error);
@@ -228,45 +235,57 @@ export default () => {
   // };
 
 
-  const toggleRecording = () => {
-    if (recording()) {
-      const mediaRecorder = new MediaRecorder(mediaStream());
-      mediaRecorder.addEventListener('dataavailable', event => {
-        const formData = new FormData();
-        formData.append('audio', event.data, 'recording.mp3');
-
-        fetch('http://192.168.10.41:5000/api/speech-to-text', {
-          method: 'POST',
-          body: formData
-        });
-      });
-
-      mediaRecorder.addEventListener('stop', () => {
-        setAudioChunks([]);
-        setRecording(false);
-      });
-
-      mediaRecorder.stop();
+  const toggleRecording = async () => {
+    if (isRecording()) {
+      // 停止录音
+      if (recorder()) {
+        recorder().stop();
+      }
+      if (audioStream()) {
+        audioStream().getTracks().forEach((track) => track.stop());
+      }
+      setIsRecording(false);
     } else {
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-          setMediaStream(stream);
+      // 开始录音
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      const audioData = []; // 存储录制的音频数据
+      mediaRecorder.addEventListener("dataavailable", (event) => {
+        audioData.push(event.data);
+      });
+      mediaRecorder.start();
 
-          const mediaRecorder = new MediaRecorder(stream);
-          mediaRecorder.start();
+      setAudioStream(stream);
+      setRecorder(mediaRecorder);
+      setIsRecording(true);
 
-          mediaRecorder.addEventListener('dataavailable', event => {
-            setAudioChunks([...audioChunks(), event.data]);
-          });
+      // 注册录音结束事件，自动保存文件
+      mediaRecorder.addEventListener("stop", async () => {
+        const audioBlob = new Blob(audioData, { type: "audio/mp3" });
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "myaudio.mp3");
 
-          setRecording(true);
+        // 发送formData到后端服务器
+        // 代码示例：
+        const response = await fetch("http://192.168.10.41:5000/api/speech-to-text", {
+          method: "POST",
+          body: formData,
         });
+
+        // 获取后端返回的文本，并进行处理
+        const text = await response.json();
+        inputRef.value = text.text;
+
+        setIsRecording(false);
+      });
     }
   };
 
-  const [mediaStream, setMediaStream] = createSignal(null);
-
-
+  onCleanup(() => {
+    if (isRecording()) {
+      toggleRecording();
+    }
+  });
 
   // @ts-ignore
   return (
@@ -321,8 +340,8 @@ export default () => {
           />
           {/*<input type="file" accept="audio/*" onChange={handleFileUpload} gen-slate-btn/>*/}
           {/*<button onClick={handleUpload} gen-slate-btn>Upload</button >*/}
-          <button onClick={toggleRecording} disabled={!mediaStream()} gen-slate-btn>
-          {recording() ? 'Stop Recording' : 'Start Recording'}
+          <button onClick={toggleRecording}>
+            {isRecording() ? "Stop" : "Start"}
           </button>
           <button onClick={handleButtonClick} disabled={systemRoleEditing()} gen-slate-btn>
             Send
