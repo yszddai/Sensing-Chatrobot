@@ -269,7 +269,7 @@ export default () => {
 
         // 发送formData到后端服务器
         // 代码示例：
-        const response = await fetch("http://119.91.254.49:5002/api/speech-to-text", {
+        const response = await fetch("https://119.91.254.49:5002/api/speech-to-text", {
           method: "POST",
           body: formData,
         });
