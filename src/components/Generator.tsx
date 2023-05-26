@@ -269,9 +269,14 @@ export default () => {
 
         // 发送formData到后端服务器
         // 代码示例：
-        const response = await fetch("http://119.91.254.49:5002/api/speech-to-text", {
+        const apiKey = '13316800323';
+        const response = await fetch("https://www.yszsenge.xyz:5002/api/speech-to-text", {
           method: "POST",
           body: formData,
+          headers:{
+            'Authorization': `Bearer ${apiKey}`
+          }
+
         });
 
         // 获取后端返回的文本，并进行处理
