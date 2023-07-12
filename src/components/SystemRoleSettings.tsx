@@ -52,7 +52,7 @@ export default (props: Props) => {
           <div>
             <textarea
               ref={systemInputRef!}
-              placeholder="请尽可能清晰的描述系统角色特点....""
+              placeholder="请尽可能清晰的描述系统角色特点...."
               autocomplete="off"
               autofocus
               rows="3"
